@@ -71,12 +71,13 @@
           </span>
           <% } %>
             <div class="actions">
-              <button onclick="location.href='/upload'">Upload Video</button>
-              <form action="/youtube" method="get">
-                <button type="submit">
-                  <%= linked ? "Change Channel" : "Link Channel" %>
-                </button>
-              </form>
+              <% if(linked) { %><button onclick="location.href='/upload'">Upload Video</button>
+                <%}%>
+                  <form action="/youtube" method="get">
+                    <button type="submit">
+                      <%= linked ? "Change Channel" : "Link Channel" %>
+                    </button>
+                  </form>
             </div>
       </div>
       <div class="videos">

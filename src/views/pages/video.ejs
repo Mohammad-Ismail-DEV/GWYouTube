@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GW YouTube Channels</title>
+
+    <!-- CSS (load bootstrap from a CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 50px;
+        }
+    </style>
+</head>
+
+<body class="container">
+
+    <header>
+        <%- include('../partials/header'); %>
+    </header>
+
+    <main>
+        <div class="jumbotron">
+            <div class="centered">
+                <iframe width="630" height="473" src="https://www.youtube.com/embed/<%= video.id%>" frameborder="0"
+                    allowfullscreen />
+            </div>
+            <span><b>ID:</b>
+                <%= video.id %>
+            </span>
+            <span><b>Title:</b>
+                <%= video.title %>
+            </span>
+            <span><b>Description:</b>
+                <%= video.description %>
+            </span>
+        </div>
+    </main>
+
+    <footer>
+        <%- include('../partials/footer'); %>
+    </footer>
+
+</body>
+
+</html>

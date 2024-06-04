@@ -39,14 +39,17 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+const errorMessages = {
+  wrongCred: "Wrong username or password!",
+  serverError: "Server Error!",
+  missing: "Missing Credentials!",
+  userExists: "User Name Already Taken!",
+};
+
 app.get("/", async (req, res) => {
   const user = req.session.user;
   const { code, error } = req.query;
-  const errorMessages = {
-    wrongCred: "Wrong username or password!",
-    serverError: "Server Error!",
-    missing: "Missing Credentials!",
-  };
+
   if (user) {
     if (code) {
       const {
@@ -80,6 +83,8 @@ app.get("/home", authenticatedRoute, async (req, res) => {
   let videos = [];
   let linked = false;
 
+  // console.log("user :>> ", user);
+
   if (access_token && refresh_token) {
     linked = true;
 
@@ -99,8 +104,6 @@ app.get("/home", authenticatedRoute, async (req, res) => {
     }));
     channel = channels[0];
 
-    console.log("channel", channel);
-
     if (channel) {
       const response = await youtube.playlistItems.list({
         part: "snippet",
@@ -109,8 +112,7 @@ app.get("/home", authenticatedRoute, async (req, res) => {
       });
 
       videos = response.data.items.map((item) => ({
-        id: item.id,
-        resourceId: item.snippet.resourceId.videoId,
+        id: item.snippet.resourceId.videoId,
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails.standard.url,
       }));
@@ -120,8 +122,53 @@ app.get("/home", authenticatedRoute, async (req, res) => {
   res.render("pages/home", { user, channel, videos, linked });
 });
 
-app.get("/register", function (req, res) {
-  res.render("pages/register");
+app.get("/register", async (req, res) => {
+  const { user } = req.session;
+  const { code, error } = req.query;
+
+  if (user) {
+    if (code) {
+      const {
+        tokens: { access_token, refresh_token },
+      } = await oauth2Client.getToken(code);
+      req.session.user.access_token = access_token;
+      req.session.user.refresh_token = refresh_token;
+      connection.query(
+        `Update users set access_token = ?, refresh_token = ? WHERE id = ?`,
+        [access_token, refresh_token, user.id]
+      );
+    }
+
+    return res.redirect("/home");
+  }
+  res.render("pages/register", { errorMessage: errorMessages[error], user });
+});
+
+app.get("/video", authenticatedRoute, async (req, res) => {
+  const { user } = req.session;
+  const { access_token, refresh_token } = user;
+  const { id } = req.query;
+
+  let video = {};
+  if (access_token && refresh_token) {
+    oauth2Client.setCredentials({
+      access_token,
+      refresh_token,
+    });
+
+    const response = await youtube.videos.list({
+      part: "snippet",
+      access_token: access_token,
+      id: id,
+    });
+
+    video = {
+      id: response.data.items[0].id,
+      title: response.data.items[0].snippet.title,
+      description: response.data.items[0].snippet.description,
+    };
+  }
+  res.render("pages/video", { video, user });
 });
 
 app.post("/login", (req, res) => {
@@ -147,56 +194,45 @@ app.post("/login", (req, res) => {
   }
 });
 
-// app.post("/register", function (req, res) {
-//   if (req.body.user_name && req.body.password) {
-//     connection.query(
-//       `Select user_name from users where user_name='${req.body.user_name}'`,
-//       function (error, result) {
-//         if (result.length > 0) {
-//           res.render("pages/login", {
-//             showAlert: true,
-//             alertMessage: "User Name Already Taken!",
-//           });
-//         } else {
-//           connection.query(
-//             `Insert into users(user_name, password) values('${req.body.user_name}', '${req.body.password}')`,
-//             function (error, result) {
-//               if (error) {
-//                 res.render("pages/register", {
-//                   showAlert: true,
-//                   alertMessage: error.message,
-//                 });
-//               } else {
-//                 connection.query(
-//                   `Select id, user_name from users where id=${result.insertId}`,
-//                   function (error, result) {
-//                     if (error) {
-//                       const response = {
-//                         status: 0,
-//                         message: error.message,
-//                       };
-//                       res.render("pages/register", {
-//                         showAlert: true,
-//                         alertMessage: error.message,
-//                       });
-//                     } else {
-//                       res.render("pages/home", { data: result[0] });
-//                     }
-//                   }
-//                 );
-//               }
-//             }
-//           );
-//         }
-//       }
-//     );
-//   } else {
-//     res.render("pages/register", {
-//       showAlert: true,
-//       alertMessage: "Username or Password missing!",
-//     });
-//   }
-// });
+app.post("/register", (req, res) => {
+  if (req.body.user_name && req.body.password) {
+    connection.query(
+      `Select user_name from users where user_name='${req.body.user_name}'`,
+      (error, result) => {
+        if (result.length > 0) {
+          res.redirect("/register?error=serverError");
+        } else {
+          connection.query(
+            `Insert into users(user_name, password) values('${req.body.user_name}', '${req.body.password}')`,
+            (error, result) => {
+              if (error) {
+                res.redirect("/register?error=serverError");
+              } else {
+                connection.query(
+                  `Select id, user_name from users where id=${result.insertId}`,
+                  (error, result) => {
+                    if (error) {
+                      const response = {
+                        status: 0,
+                        message: error.message,
+                      };
+                      res.redirect("/register?error=serverError");
+                    } else {
+                      req.session.user = result[0];
+                      res.redirect("/home");
+                    }
+                  }
+                );
+              }
+            }
+          );
+        }
+      }
+    );
+  } else {
+    res.redirect("/register?error=missing");
+  }
+});
 
 app.get("/youtube", authenticatedRoute, async (req, res) => {
   const scopes = [
