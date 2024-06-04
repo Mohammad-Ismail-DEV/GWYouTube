@@ -1,31 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>GW YouTube Channels</title>
-  
+
   <!-- CSS (load bootstrap from a CDN) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
-    body { padding-top:50px; }
+    body {
+      padding-top: 50px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+
+    .videos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 280px);
+      justify-content: space-evenly;
+      grid-gap: 20px;
+    }
+
+    .videoCard {
+      display: flex;
+      flex-direction: column;
+      width: 280px;
+      padding: 20px;
+      background-color: #FFF;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      border-radius: 8px;
+    }
+
+    .videoCard img {
+      width: 240px;
+    }
+
+    .videoCard span {
+      font-weight: bold;
+      color: #000000;
+      text-decoration: none;
+      margin-top: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
   </style>
 </head>
+
 <body class="container">
 
-<header>
-  <%- include('../partials/header'); %>
-</header>
+  <header>
+    <%- include('../partials/header'); %>
+  </header>
 
-<main>
-  <div class="jumbotron">
-    <h1>This is great</h1>
-    <p>Welcome to templating using EJS</p>
-  </div>
-</main>
+  <main>
+    <div class="jumbotron">
+      <div class="header">
+        <% if (linked) { %> <span><b>Channel:</b>
+            <%= channel.title %>
+          </span>
+          <% } %>
+            <div class="actions">
+              <button onclick="location.href='/upload'">Upload Video</button>
+              <form action="/youtube" method="get">
+                <button type="submit">
+                  <%= linked ? "Change Channel" : "Link Channel" %>
+                </button>
+              </form>
+            </div>
+      </div>
+      <div class="videos">
+        <% for(let i=0; i<videos.length; i++) {%>
+          <a href="/video?id=<%= videos[i].id %>">
+            <div class="videoCard">
+              <img src="<%= videos[i].thumbnail %>" alt="thumbnail<%= i %>" />
+              <span>
+                <%=videos[i].title %>
+              </span>
+            </div>
+          </a>
+          <%}%>
+      </div>
+    </div>
+  </main>
 
-<footer>
-  <%- include('../partials/footer'); %>
-</footer>
+  <footer>
+    <%- include('../partials/footer'); %>
+  </footer>
 
 </body>
+
 </html>
