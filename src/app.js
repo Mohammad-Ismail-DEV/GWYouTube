@@ -46,6 +46,8 @@ const errorMessages = {
   userExists: "User Name Already Taken!",
 };
 
+//get requests
+
 app.get("/", async (req, res) => {
   const user = req.session.user;
   const { code, error } = req.query;
@@ -83,8 +85,6 @@ app.get("/home", authenticatedRoute, async (req, res) => {
   let videos = [];
   let linked = false;
 
-  // console.log("user :>> ", user);
-
   if (access_token && refresh_token) {
     linked = true;
 
@@ -112,6 +112,7 @@ app.get("/home", authenticatedRoute, async (req, res) => {
       });
 
       videos = response.data.items.map((item) => ({
+        apid: item.id,
         id: item.snippet.resourceId.videoId,
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails.standard.url,
@@ -147,7 +148,7 @@ app.get("/register", async (req, res) => {
 app.get("/video", authenticatedRoute, async (req, res) => {
   const { user } = req.session;
   const { access_token, refresh_token } = user;
-  const { id } = req.query;
+  const { id, edit, apid } = req.query;
 
   let video = {};
   if (access_token && refresh_token) {
@@ -161,15 +162,23 @@ app.get("/video", authenticatedRoute, async (req, res) => {
       access_token: access_token,
       id: id,
     });
-
     video = {
+      apid: apid,
       id: response.data.items[0].id,
+      categoryId: response.data.items[0].snippet.categoryId,
       title: response.data.items[0].snippet.title,
       description: response.data.items[0].snippet.description,
     };
   }
-  res.render("pages/video", { video, user });
+  res.render("pages/video", { video, user, edit });
 });
+
+app.get("/upload", authenticatedRoute, (req, res) => {
+  const { user } = req.session;
+  res.render("pages/upload", { user });
+});
+
+// Post requests
 
 app.post("/login", (req, res) => {
   if (req.body.user_name && req.body.password) {
@@ -264,4 +273,51 @@ app.get("/logout", (req, res) => {
     }
     res.redirect("/");
   });
+});
+
+app.post("/upload", async (req, res) => {
+  var metadata = {
+    snippet: { title: "title", description: "description" },
+    status: { privacyStatus: "private" },
+  };
+  const response = await youtube.videos
+    .insert({ part: "snippet,status" }, metadata)
+    .withMedia("video/mp4", fs.readFileSync("user.flv"))
+    .withAuthClient(auth)
+    .execute(function (err, result) {
+      if (err) console.log(err);
+      else console.log(JSON.stringify(result, null, "  "));
+    });
+});
+
+app.post("/edit", authenticatedRoute, async (req, res) => {
+  const { user } = req.session;
+  const { access_token, refresh_token } = user;
+  oauth2Client.setCredentials({
+    access_token,
+    refresh_token,
+  });
+
+  // console.log("req.body :>> ", req.body);
+  const response = await youtube.videos.update({
+    part: "id, snippet, localizations",
+    access_token: access_token,
+    id: req.body.apid,
+    requestBody: {
+      snippet: {
+        title: req.body.newTitle,
+        description: req.body.newDescription,
+        categoryId: req.body.categoryId,
+      },
+      localizations: {
+        sq: {
+          title: req.body.newTitle,
+          description: req.body.newDescription,
+        },
+      },
+    },
+  });
+
+  console.log("res :>> ", response);
+  res.redirect(`/video?id=${req.body.id}&apid=${req.body.apid}`);
 });

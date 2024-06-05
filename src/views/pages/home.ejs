@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>GW YouTube Channels</title>
+  <title>GW YouTube</title>
 
   <!-- CSS (load bootstrap from a CDN) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
@@ -82,7 +82,7 @@
       </div>
       <div class="videos">
         <% for(let i=0; i<videos.length; i++) {%>
-          <a href="/video?id=<%= videos[i].id %>">
+          <a href="/video?id=<%= videos[i].id %>&apid=<%= videos[i].apid %>">
             <div class="videoCard">
               <img src="<%= videos[i].thumbnail %>" alt="thumbnail<%= i %>" />
               <span>

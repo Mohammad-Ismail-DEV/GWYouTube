@@ -3,13 +3,65 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>GW YouTube Channels</title>
+    <title>Video</title>
 
     <!-- CSS (load bootstrap from a CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
             padding-top: 50px;
+        }
+
+        .centered {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .column {
+            padding: 0 30px;
+            display: flex;
+            flex-grow: 1;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .col {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .spaced {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: space-evenly;
+        }
+
+        .form {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .lable {
+            display: flex;
+            justify-content: space-between;
+            margin-right: 20px;
+        }
+
+        .col input {
+            width: 750px;
         }
     </style>
 </head>
@@ -24,17 +76,50 @@
         <div class="jumbotron">
             <div class="centered">
                 <iframe width="630" height="473" src="https://www.youtube.com/embed/<%= video.id%>" frameborder="0"
-                    allowfullscreen />
+                    allowfullscreen></iframe>
+                <div class="spaced">
+                    <div action="/edit" method="post" class="column">
+                        <span><b>ID:</b>
+                            <%= video.id %>
+                        </span>
+                        <% if(edit) { %>
+                            <form class="form" action="/edit" method="post">
+                                <div class="col">
+                                    <input hidden value="<%= video.id %>" name="id" />
+                                    <input hidden value="<%= video.apid %>" name="apid" />
+                                    <input hidden value="<%= video.categoryId %>" name="categoryId" />
+                                    <input hidden value="<%= video.title %>" name="oldTitle" />
+                                    <input hidden value="<%= video.description %>" name="oldDescription" />
+                                    <div class="lable"><span><b>Title:</b></span><input name="newTitle"
+                                            placeholder="<%= video.title %>" />
+                                    </div>
+                                    <div class="lable">
+                                        <span><b>Description:</b></span><input name="newDescription"
+                                            placeholder="<%= video.description %>" />
+                                    </div>
+                                </div>
+                                <div class="actions">
+                                    <button type="submit">Save</button>
+                                    <button type="reset"
+                                        onclick="location.href='/video?id=<%= video.id %>'">Cancel</button>
+                                </div>
+                            </form>
+                            <%}else{%> <span><b>Title:</b>
+                                    <%= video.title %>
+                                </span>
+                                <span><b>Description:</b>
+                                    <%= video.description %>
+                                </span>
+                                <%}%>
+                    </div>
+                    <div class="actions">
+                        <% if(!edit) {%>
+                            <button
+                                onclick="location.href='/video?id=<%= video.id %>&edit=true&apid=<%= video.apid %>'">Edit</button>
+                            <%}%>
+                    </div>
+                </div>
             </div>
-            <span><b>ID:</b>
-                <%= video.id %>
-            </span>
-            <span><b>Title:</b>
-                <%= video.title %>
-            </span>
-            <span><b>Description:</b>
-                <%= video.description %>
-            </span>
         </div>
     </main>
 

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Register</title>
+    <title>Upload</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
@@ -21,18 +21,7 @@
     <main>
 
         <div class="jumbotron">
-            <form action="/register" method="post">
-                <input id="user_name" name="user_name" />
-                <input type="password" id="password" name="password" />
-                <button type="submit">Register</button>
-            </form>
-            <% if (errorMessage) { %>
-                <span>
-                    <%= errorMessage %>
-                </span>
-                <% } %>
-                    <span>Already have an account? </span>
-                    <a href="/">Login</a>
+            <input type="file" onchange="console.log(1)">
         </div>
 
     </main>
