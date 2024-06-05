@@ -23,15 +23,15 @@
         <div class="jumbotron">
             <form action="/upload" method="post" enctype="multipart/form-data">
                 <label for="video">Select Video:</label><br>
-                <input type="file" id="video" name="video" accept="video/*"><br><br>
+                <input required type="file" id="video" name="video" accept="video/*"><br><br>
                 <label for="title">Title:</label><br>
-                <input type="text" id="title" name="title"><br><br>
+                <input required type="text" id="title" name="title"><br><br>
                 <label for="tags">Tags:</label><br>
-                <input placeholder="split tags with ',' " type="text" id="tags" name="tags"><br><br>
+                <input required placeholder="split tags with ',' " type="text" id="tags" name="tags"><br><br>
                 <label for="privacy">Privacy Status:</label><br>
-                <input placeholder="public or private" type="text" id="privacy" name="privacy"><br><br>
+                <input required placeholder="public or private" type="text" id="privacy" name="privacy"><br><br>
                 <label for="category">Category ID:</label><br>
-                <input type="text" id="category" name="category"><br><br>
+                <input required type="text" id="category" name="category"><br><br>
                 <label for="description">Description:</label><br>
                 <textarea id="description" name="description"></textarea><br><br>
                 <button type="submit">Upload</button>

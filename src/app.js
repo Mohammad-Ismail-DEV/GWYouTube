@@ -12,7 +12,7 @@ require("dotenv").config();
 const { google } = require("googleapis");
 const youtube = google.youtube("v3");
 
-const upload = multer({ dest: "src/uploads/" });
+const upload = multer({ dest: "uploads/" });
 
 const {
   GOOGLE_API_KEY,
@@ -257,17 +257,11 @@ app.get("/youtube", authenticatedRoute, async (req, res) => {
   ];
 
   const url = oauth2Client.generateAuthUrl({
-    // 'online' (default) or 'offline' (gets refresh_token)
     access_type: "offline",
 
-    // If you only need one scope you can pass it as a string
     scope: scopes,
   });
   res.redirect(url);
-
-  // Acquire an auth client, and bind it to all future calls
-  // const authClient = await auth.getClient();
-  // google.options({ auth: authClient, key: GOOGLE_API_KEY });
 });
 
 app.get("/logout", (req, res) => {
@@ -332,12 +326,16 @@ app.post(
   upload.single("video"),
   async (req, res) => {
     try {
-      const uploadedFilePath = req.file?.path;
+      console.log(req.file);
+      const parts = req.file?.originalname.split(".");
+      const ext = parts[parts.length - 1];
+      const uploadedFilePath = `${req.file?.path}.${ext}`;
       const videoTitle = req.body.title;
       const videoDescription = req.body.description;
       const videoTags = req.body.tags.split(",");
       const videoPrivacy = req.body.privacy;
       const videoCategory = req.body.category;
+      fs.renameSync(req.file?.path, uploadedFilePath);
       await uploadVideoToYoutube(
         req,
         uploadedFilePath,
@@ -347,7 +345,7 @@ app.post(
         videoPrivacy,
         videoCategory
       );
-      fs.unlinkSync(req.file.path);
+      fs.unlinkSync(uploadedFilePath);
       res.redirect("/");
     } catch (error) {
       console.error(error);
