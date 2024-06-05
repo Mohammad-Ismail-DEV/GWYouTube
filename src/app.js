@@ -119,7 +119,7 @@ app.get("/home", authenticatedRoute, async (req, res) => {
         apid: item.id,
         id: item.snippet.resourceId.videoId,
         title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails.standard?.url,
+        thumbnail: item.snippet.thumbnails.medium?.url,
       }));
     }
   }
@@ -213,7 +213,7 @@ app.post("/register", (req, res) => {
       `Select user_name from users where user_name='${req.body.user_name}'`,
       (error, result) => {
         if (result.length > 0) {
-          res.redirect("/register?error=serverError");
+          res.redirect("/register?error=userExists");
         } else {
           connection.query(
             `Insert into users(user_name, password) values('${req.body.user_name}', '${req.body.password}')`,
@@ -280,24 +280,22 @@ const uploadVideoToYoutube = async (
   videoDescription,
   videoTags,
   videoPrivacy,
-  videoCategory
+  videoCategory,
+  mimeType
 ) => {
+  const { user } = req.session;
+  const { access_token, refresh_token } = user;
   const requestBody = {
-    categoryId: videoCategory,
     snippet: {
       title: videoTitle,
       description: videoDescription,
       tags: videoTags,
+      categoryId: videoCategory,
     },
     status: {
       privacyStatus: videoPrivacy,
     },
   };
-  console.log("videoFilePath :>> ", videoFilePath);
-  const parts = [];
-  parts.push({ body: fs.createReadStream(videoFilePath) });
-  const { user } = req.session;
-  const { access_token, refresh_token } = user;
   oauth2Client.setCredentials({
     access_token,
     refresh_token,
@@ -307,13 +305,12 @@ const uploadVideoToYoutube = async (
     const upload = await youtube.videos.insert({
       part: "snippet,status",
       access_token: access_token,
-      body: requestBody,
+      requestBody,
       media: {
-        body: parts,
+        body: fs.createReadStream(videoFilePath),
       },
     });
-
-    return upload.data.id;
+    return upload.data;
   } catch (error) {
     console.error("Error uploading video:", error);
     throw error;
@@ -326,10 +323,10 @@ app.post(
   upload.single("video"),
   async (req, res) => {
     try {
-      console.log(req.file);
       const parts = req.file?.originalname.split(".");
       const ext = parts[parts.length - 1];
       const uploadedFilePath = `${req.file?.path}.${ext}`;
+      const mimeType = req.file?.mimetype;
       const videoTitle = req.body.title;
       const videoDescription = req.body.description;
       const videoTags = req.body.tags.split(",");
@@ -343,7 +340,8 @@ app.post(
         videoDescription,
         videoTags,
         videoPrivacy,
-        videoCategory
+        videoCategory,
+        mimeType
       );
       fs.unlinkSync(uploadedFilePath);
       res.redirect("/");
@@ -363,10 +361,10 @@ app.post("/edit", authenticatedRoute, async (req, res) => {
   });
 
   const response = await youtube.videos.update({
-    part: "id, snippet",
+    part: "snippet",
     access_token: access_token,
-    id: req.body.apid,
     requestBody: {
+      id: req.body.id,
       snippet: {
         title: req.body.newTitle,
         description: req.body.newDescription,
@@ -374,7 +372,5 @@ app.post("/edit", authenticatedRoute, async (req, res) => {
       },
     },
   });
-
-  console.log("res :>> ", response);
   res.redirect(`/video?id=${req.body.id}&apid=${req.body.apid}`);
 });

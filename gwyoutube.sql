@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jun 05, 2024 at 02:07 AM
--- Server version: 8.3.0
--- PHP Version: 8.2.18
+-- Generation Time: Jun 05, 2024 at 11:55 AM
+-- Server version: 8.0.31
+-- PHP Version: 8.0.26
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -35,15 +35,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `access_token` text,
   `refresh_token` text,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `user_name`, `password`, `access_token`, `refresh_token`) VALUES
-(2, 'mohamad', 'Test123', NULL, NULL),
-(3, 'ali', 'ali', NULL, NULL);
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

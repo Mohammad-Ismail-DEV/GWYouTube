@@ -29,7 +29,10 @@
                 <label for="tags">Tags:</label><br>
                 <input required placeholder="split tags with ',' " type="text" id="tags" name="tags"><br><br>
                 <label for="privacy">Privacy Status:</label><br>
-                <input required placeholder="public or private" type="text" id="privacy" name="privacy"><br><br>
+                <select required id="privacy" name="privacy">
+                    <option value="private">private</option>
+                    <option value="public">public</option>
+                </select><br><br>
                 <label for="category">Category ID:</label><br>
                 <input required type="text" id="category" name="category"><br><br>
                 <label for="description">Description:</label><br>

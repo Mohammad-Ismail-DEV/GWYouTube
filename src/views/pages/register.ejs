@@ -9,6 +9,10 @@
         body {
             padding-top: 50px;
         }
+
+        .error {
+            color: red;
+        }
     </style>
 </head>
 
@@ -27,12 +31,14 @@
                 <button type="submit">Register</button>
             </form>
             <% if (errorMessage) { %>
-                <span>
+                <span class="error">
                     <%= errorMessage %>
                 </span>
                 <% } %>
-                    <span>Already have an account? </span>
-                    <a href="/">Login</a>
+                    <div>
+                        <span>Already have an account? </span>
+                        <a href="/">Login</a>
+                    </div>
         </div>
 
     </main>
