@@ -21,15 +21,7 @@
     <main>
 
         <div class="jumbotron">
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <label for="video">Select Video:</label><br>
-                <input type="file" id="video" name="video" accept="video/*"><br><br>
-                <label for="title">Title:</label><br>
-                <input type="text" id="title" name="title"><br><br>
-                <label for="description">Description:</label><br>
-                <textarea id="description" name="description"></textarea><br><br>
-                <button type="submit">Upload</button>
-            </form>
+            <input type="file" onchange="console.log(1)">
         </div>
 
     </main>

@@ -1,12 +1,14 @@
 const express = require("express");
+const axios = require("axios");
 const path = require("path");
-const multer = require("multer");
-const fs = require("fs");
 const app = express();
 const port = 3000;
 var connection = require("./database");
 const session = require("express-session");
 require("dotenv").config();
+
+const { google } = require("googleapis");
+const youtube = google.youtube("v3");
 
 const {
   GOOGLE_API_KEY,
@@ -14,11 +16,7 @@ const {
   CLIENT_SECRET,
 } = require("./utils/environment");
 
-const { google } = require("googleapis");
-const youtube = google.youtube("v3");
-
 const oauth2Client = new google.auth.OAuth2(
-  GOOGLE_API_KEY,
   CLIENT_ID,
   CLIENT_SECRET,
   "http://localhost:3000"
@@ -262,6 +260,10 @@ app.get("/youtube", authenticatedRoute, async (req, res) => {
     scope: scopes,
   });
   res.redirect(url);
+
+  // Acquire an auth client, and bind it to all future calls
+  // const authClient = await auth.getClient();
+  // google.options({ auth: authClient, key: GOOGLE_API_KEY });
 });
 
 app.get("/logout", (req, res) => {
@@ -273,63 +275,19 @@ app.get("/logout", (req, res) => {
   });
 });
 
-const upload = multer({ dest: "src/uploads/" });
-
-async function uploadVideoToYoutube(
-  videoFilePath,
-  videoTitle,
-  videoDescription
-) {
-  const requestBody = {
-    snippet: {
-      title: videoTitle,
-      description: videoDescription,
-    },
-    status: {
-      privacyStatus: "public", // Set to 'private' for unlisted videos
-    },
+app.post("/upload", async (req, res) => {
+  var metadata = {
+    snippet: { title: "title", description: "description" },
+    status: { privacyStatus: "private" },
   };
-
-  const parts = [];
-  parts.push({ body: fs.createReadStream(videoFilePath) });
-
-  try {
-    const upload = await youtube.videos.insert({
-      part: "snippet,status",
-      body: requestBody,
-      media: {
-        body: parts,
-      },
+  const response = await youtube.videos
+    .insert({ part: "snippet,status" }, metadata)
+    .withMedia("video/mp4", fs.readFileSync("user.flv"))
+    .withAuthClient(auth)
+    .execute(function (err, result) {
+      if (err) console.log(err);
+      else console.log(JSON.stringify(result, null, "  "));
     });
-
-    return upload.data.id;
-  } catch (error) {
-    console.error("Error uploading video:", error);
-    throw error; // Re-throw for handling in the main program
-  }
-}
-
-app.post("/upload", upload.single("video"), async (req, res) => {
-  console.log("req.file :>> ", req.file);
-  // try {
-  //   const uploadedFilePath = fs.readFileSync(req.file.path).toString();
-
-  //   const videoTitle = req.body.title;
-  //   const videoDescription = req.body.description;
-
-  //   const videoId = await uploadVideoToYoutube(
-  //     uploadedFilePath,
-  //     videoTitle,
-  //     videoDescription
-  //   );
-
-  //   fs.unlinkSync(req.file.path);
-  //   console.log("Success", videoId);
-  //   // res.send(`Video uploaded successfully! Video ID: ${videoId}`);
-  // } catch (error) {
-  //   console.error(error);
-  //   res.status(500).send("Error uploading video");
-  // }
 });
 
 app.post("/edit", authenticatedRoute, async (req, res) => {
@@ -340,22 +298,26 @@ app.post("/edit", authenticatedRoute, async (req, res) => {
     refresh_token,
   });
 
-  try {
-    const response = await youtube.videos.update({
-      id: req.body.apid,
-      access_token: access_token,
-      part: "snippet",
-      requestBody: {
-        snippet: {
+  // console.log("req.body :>> ", req.body);
+  const response = await youtube.videos.update({
+    part: "id, snippet, localizations",
+    access_token: access_token,
+    id: req.body.apid,
+    requestBody: {
+      snippet: {
+        title: req.body.newTitle,
+        description: req.body.newDescription,
+        categoryId: req.body.categoryId,
+      },
+      localizations: {
+        sq: {
           title: req.body.newTitle,
           description: req.body.newDescription,
         },
       },
-    });
-    console.log("Video updated successfully!", response.data);
-  } catch (error) {
-    console.error("Error updating video:", error);
-  }
+    },
+  });
 
+  console.log("res :>> ", response);
   res.redirect(`/video?id=${req.body.id}&apid=${req.body.apid}`);
 });
