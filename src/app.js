@@ -283,18 +283,23 @@ const uploadVideoToYoutube = async (
   req,
   videoFilePath,
   videoTitle,
-  videoDescription
+  videoDescription,
+  videoTags,
+  videoPrivacy,
+  videoCategory
 ) => {
   const requestBody = {
+    categoryId: videoCategory,
     snippet: {
       title: videoTitle,
       description: videoDescription,
+      tags: videoTags,
     },
     status: {
-      privacyStatus: "public",
+      privacyStatus: videoPrivacy,
     },
   };
-
+  console.log("videoFilePath :>> ", videoFilePath);
   const parts = [];
   parts.push({ body: fs.createReadStream(videoFilePath) });
   const { user } = req.session;
@@ -326,16 +331,21 @@ app.post(
   authenticatedRoute,
   upload.single("video"),
   async (req, res) => {
-    console.log("req.file :>> ", req.file?.path);
     try {
       const uploadedFilePath = req.file?.path;
       const videoTitle = req.body.title;
       const videoDescription = req.body.description;
-      const videoId = await uploadVideoToYoutube(
+      const videoTags = req.body.tags.split(",");
+      const videoPrivacy = req.body.privacy;
+      const videoCategory = req.body.category;
+      await uploadVideoToYoutube(
         req,
         uploadedFilePath,
         videoTitle,
-        videoDescription
+        videoDescription,
+        videoTags,
+        videoPrivacy,
+        videoCategory
       );
       fs.unlinkSync(req.file.path);
       res.redirect("/");
@@ -354,9 +364,8 @@ app.post("/edit", authenticatedRoute, async (req, res) => {
     refresh_token,
   });
 
-  // console.log("req.body :>> ", req.body);
   const response = await youtube.videos.update({
-    part: "id, snippet, localizations",
+    part: "id, snippet",
     access_token: access_token,
     id: req.body.apid,
     requestBody: {
@@ -364,12 +373,6 @@ app.post("/edit", authenticatedRoute, async (req, res) => {
         title: req.body.newTitle,
         description: req.body.newDescription,
         categoryId: req.body.categoryId,
-      },
-      localizations: {
-        sq: {
-          title: req.body.newTitle,
-          description: req.body.newDescription,
-        },
       },
     },
   });
