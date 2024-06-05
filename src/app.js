@@ -2,6 +2,8 @@ const express = require("express");
 const axios = require("axios");
 const path = require("path");
 const app = express();
+const multer = require("multer");
+const fs = require("fs");
 const port = 3000;
 var connection = require("./database");
 const session = require("express-session");
@@ -9,6 +11,8 @@ require("dotenv").config();
 
 const { google } = require("googleapis");
 const youtube = google.youtube("v3");
+
+const upload = multer({ dest: "src/uploads/" });
 
 const {
   GOOGLE_API_KEY,
@@ -115,7 +119,7 @@ app.get("/home", authenticatedRoute, async (req, res) => {
         apid: item.id,
         id: item.snippet.resourceId.videoId,
         title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails.standard.url,
+        thumbnail: item.snippet.thumbnails.standard?.url,
       }));
     }
   }
@@ -275,20 +279,72 @@ app.get("/logout", (req, res) => {
   });
 });
 
-app.post("/upload", async (req, res) => {
-  var metadata = {
-    snippet: { title: "title", description: "description" },
-    status: { privacyStatus: "private" },
+const uploadVideoToYoutube = async (
+  req,
+  videoFilePath,
+  videoTitle,
+  videoDescription
+) => {
+  const requestBody = {
+    snippet: {
+      title: videoTitle,
+      description: videoDescription,
+    },
+    status: {
+      privacyStatus: "public",
+    },
   };
-  const response = await youtube.videos
-    .insert({ part: "snippet,status" }, metadata)
-    .withMedia("video/mp4", fs.readFileSync("user.flv"))
-    .withAuthClient(auth)
-    .execute(function (err, result) {
-      if (err) console.log(err);
-      else console.log(JSON.stringify(result, null, "  "));
+
+  const parts = [];
+  parts.push({ body: fs.createReadStream(videoFilePath) });
+  const { user } = req.session;
+  const { access_token, refresh_token } = user;
+  oauth2Client.setCredentials({
+    access_token,
+    refresh_token,
+  });
+
+  try {
+    const upload = await youtube.videos.insert({
+      part: "snippet,status",
+      access_token: access_token,
+      body: requestBody,
+      media: {
+        body: parts,
+      },
     });
-});
+
+    return upload.data.id;
+  } catch (error) {
+    console.error("Error uploading video:", error);
+    throw error;
+  }
+};
+
+app.post(
+  "/upload",
+  authenticatedRoute,
+  upload.single("video"),
+  async (req, res) => {
+    console.log("req.file :>> ", req.file?.path);
+    try {
+      const uploadedFilePath = req.file?.path;
+      const videoTitle = req.body.title;
+      const videoDescription = req.body.description;
+      const videoId = await uploadVideoToYoutube(
+        req,
+        uploadedFilePath,
+        videoTitle,
+        videoDescription
+      );
+      fs.unlinkSync(req.file.path);
+      res.redirect("/");
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Error uploading video");
+    }
+  }
+);
 
 app.post("/edit", authenticatedRoute, async (req, res) => {
   const { user } = req.session;
